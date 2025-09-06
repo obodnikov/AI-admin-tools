@@ -1,0 +1,19 @@
+[telegram]
+# Get your bot token from @BotFather on Telegram
+token = YOUR_TELEGRAM_BOT_TOKEN
+# Get chat ID by sending a message to your bot and visiting:
+# https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+chat_id = YOUR_CHAT_ID
+
+[docker]
+# Comma-separated list of container names to ignore
+ignore_containers = 
+# Skip checking containers with these tags (default: latest and rc tags are always skipped)
+skip_tags = latest,rc,beta,alpha,dev,nightly,snapshot,preview
+
+[registry]
+# Docker Hub API settings
+check_private_repos = false
+# Add Docker Hub credentials if checking private repositories
+docker_hub_username = 
+docker_hub_password =
