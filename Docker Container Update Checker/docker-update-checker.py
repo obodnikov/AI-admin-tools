@@ -258,44 +258,95 @@ docker_hub_password =
     
     def check_lscr_update(self, image_name: str, current_tag: str, container_id: str) -> Optional[str]:
         """Check if there's a newer version on LinuxServer.io registry."""
-        # Skip checking if current tag is in skip list
-        if any(skip in current_tag.lower() for skip in self.skip_tags):
-            logger.debug(f"Skipping update check for lscr.io/{image_name}:{current_tag} (tag in skip list)")
-            return None
-        
         try:
+            # Skip checking if current tag is in skip list  
+            if any(skip in current_tag.lower() for skip in self.skip_tags):
+                logger.debug(f"Skipping update check for lscr.io/{image_name}:{current_tag} (tag in skip list)")
+                return None
+            
             # Get current image digest
             current_digest = self.get_image_digest(container_id)
             if not current_digest:
                 logger.debug(f"Could not get current digest for lscr.io/{image_name}:{current_tag}")
                 return None
             
-            # Pull the latest manifest to compare
-            # Note: This requires docker pull to get the latest digest without actually downloading
+            logger.debug(f"Current digest: {current_digest}")
+            
+            # Use docker manifest inspect to get remote digest
             logger.debug(f"Checking latest digest for lscr.io/{image_name}:{current_tag}")
             
-            # Use docker manifest inspect to get remote digest without pulling
             manifest_output = self.run_docker_command([
                 'manifest', 'inspect', 
-                f'lscr.io/{image_name}:{current_tag}',
-                '--verbose'
+                f'lscr.io/{image_name}:{current_tag}'
             ])
             
-            if manifest_output:
-                # Parse the manifest to get digest
-                import json
-                try:
-                    manifest_data = json.loads(manifest_output)
-                    remote_digest = manifest_data.get('Descriptor', {}).get('digest', '')
-                    if remote_digest and remote_digest != current_digest:
+            if not manifest_output:
+                logger.debug("No manifest output received")
+                return None
+            
+            # Parse the manifest output - should be JSON with OCI format
+            try:
+                manifest_data = json.loads(manifest_output)
+                logger.debug(f"Successfully parsed manifest JSON")
+                
+                remote_digest = None
+                
+                # LinuxServer.io uses OCI manifest format with 'manifests' array
+                if isinstance(manifest_data, dict) and 'manifests' in manifest_data:
+                    manifests = manifest_data['manifests']
+                    if isinstance(manifests, list) and len(manifests) > 0:
+                        # Look for amd64 architecture
+                        for manifest in manifests:
+                            if isinstance(manifest, dict):
+                                platform = manifest.get('platform')
+                                if isinstance(platform, dict):
+                                    if platform.get('architecture') == 'amd64' and platform.get('os') == 'linux':
+                                        remote_digest = manifest.get('digest')
+                                        logger.debug(f"Found amd64/linux digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                                        break
+                        
+                        # If no amd64 found, use first manifest
+                        if not remote_digest and isinstance(manifests[0], dict):
+                            remote_digest = manifests[0].get('digest')
+                            logger.debug(f"Using first manifest digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                
+                # Compare digests
+                if remote_digest:
+                    current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                    remote_sha = remote_digest.split(':')[-1] if ':' in remote_digest else remote_digest
+                    
+                    logger.debug(f"Comparing digests:")
+                    logger.debug(f"  Current SHA: {current_sha[:12]}...")
+                    logger.debug(f"  Remote SHA:  {remote_sha[:12]}...")
+                    
+                    if current_sha != remote_sha:
+                        logger.info(f"Update available for lscr.io/{image_name}:{current_tag}")
                         return f"New version available (digest changed)"
-                except json.JSONDecodeError:
-                    logger.debug("Could not parse manifest data")
+                    else:
+                        logger.debug("Digests match - no update needed")
+                else:
+                    logger.debug("Could not extract remote digest from manifest")
+                    
+            except json.JSONDecodeError as e:
+                logger.debug(f"Failed to parse manifest as JSON: {e}")
+                # Fallback: try to extract digest using regex
+                import re
+                digest_match = re.search(r'sha256:[a-f0-9]{64}', manifest_output)
+                if digest_match:
+                    remote_digest = digest_match.group()
+                    current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                    remote_sha = remote_digest.split(':')[-1]
+                    
+                    if current_sha != remote_sha:
+                        logger.info(f"Update available for lscr.io/{image_name}:{current_tag}")
+                        return f"New version available (digest changed)"
             
             return None
             
         except Exception as e:
             logger.warning(f"Failed to check lscr.io for {image_name}:{current_tag}: {e}")
+            import traceback
+            logger.debug(f"Traceback:\n{traceback.format_exc()}")
             return None
     
     def check_ghcr_update(self, image_name: str, current_tag: str, container_id: str) -> Optional[str]:
@@ -318,25 +369,68 @@ docker_hub_password =
             # Use docker manifest inspect to get remote digest
             manifest_output = self.run_docker_command([
                 'manifest', 'inspect', 
-                f'ghcr.io/{image_name}:{current_tag}',
-                '--verbose'
+                f'ghcr.io/{image_name}:{current_tag}'
             ])
             
             if manifest_output:
-                # Parse the manifest to get digest
-                import json
+                # The manifest inspect output contains the digest
                 try:
+                    # Try parsing as JSON first
                     manifest_data = json.loads(manifest_output)
-                    remote_digest = manifest_data.get('Descriptor', {}).get('digest', '')
-                    if remote_digest and remote_digest != current_digest:
-                        return f"New version available (digest changed)"
-                except json.JSONDecodeError:
-                    logger.debug("Could not parse manifest data")
+                    
+                    # Handle different manifest formats
+                    remote_digest = None
+                    
+                    # Format 1: Manifest list (multi-arch) - check this first as it's common
+                    if isinstance(manifest_data, list) and len(manifest_data) > 0:
+                        # Get the first manifest's digest
+                        first_manifest = manifest_data[0]
+                        if isinstance(first_manifest, dict):
+                            remote_digest = first_manifest.get('digest', '')
+                    # Format 2: Direct manifest with config
+                    elif isinstance(manifest_data, dict):
+                        # Check for config digest
+                        if 'config' in manifest_data:
+                            remote_digest = manifest_data['config'].get('digest', '')
+                        # Or check for digest directly
+                        elif 'digest' in manifest_data:
+                            remote_digest = manifest_data['digest']
+                    
+                    if remote_digest:
+                        # Compare just the sha256 part
+                        current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                        remote_sha = remote_digest.split(':')[-1] if ':' in remote_digest else remote_digest
+                        
+                        if current_sha != remote_sha:
+                            logger.debug(f"Digest mismatch - Current: {current_sha[:12]}..., Remote: {remote_sha[:12]}...")
+                            return f"New version available (digest changed)"
+                        else:
+                            logger.debug(f"Digests match - no update needed")
+                    else:
+                        logger.debug(f"Could not extract remote digest from manifest. Data type: {type(manifest_data)}")
+                        
+                except json.JSONDecodeError as e:
+                    # If not JSON, try to extract digest from raw output
+                    logger.debug(f"Manifest output is not JSON: {e}")
+                    # Look for sha256: pattern in the output
+                    import re
+                    digest_match = re.search(r'sha256:[a-f0-9]{64}', manifest_output)
+                    if digest_match:
+                        remote_digest = digest_match.group()
+                        current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                        remote_sha = remote_digest.split(':')[-1]
+                        
+                        if current_sha != remote_sha:
+                            return f"New version available (digest changed)"
+                except Exception as e:
+                    logger.debug(f"Error parsing manifest: {e}")
             
             return None
             
         except Exception as e:
             logger.warning(f"Failed to check ghcr.io for {image_name}:{current_tag}: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
             return None
     
     def check_container_updates(self):
@@ -352,47 +446,63 @@ docker_hub_password =
             
             logger.info(f"Checking container: {container_name} ({image})")
             
-            registry, image_name, tag = self.parse_image_tag(image)
-            
-            # Check different registries
-            if registry == 'docker.io':
-                update_info = self.check_dockerhub_update(image_name, tag)
-                if update_info:
-                    updates.append({
-                        'container': container_name,
-                        'current_image': image,
-                        'update_info': update_info
-                    })
-                    logger.info(f"Update available for {container_name}")
-            elif registry == 'lscr.io':
-                update_info = self.check_lscr_update(image_name, tag, container_id)
-                if update_info:
-                    updates.append({
-                        'container': container_name,
-                        'current_image': image,
-                        'update_info': update_info
-                    })
-                    logger.info(f"Update available for {container_name}")
-            elif registry == 'ghcr.io':
-                update_info = self.check_ghcr_update(image_name, tag, container_id)
-                if update_info:
-                    updates.append({
-                        'container': container_name,
-                        'current_image': image,
-                        'update_info': update_info
-                    })
-                    logger.info(f"Update available for {container_name}")
-            elif registry in ['quay.io']:
-                # These registries could be supported in the future
-                logger.info(f"Container {container_name} uses {registry} registry (not yet supported)")
-                if registry not in skipped_registries:
-                    skipped_registries[registry] = []
-                skipped_registries[registry].append(container_name)
-            else:
-                logger.debug(f"Container {container_name} uses unsupported registry: {registry}")
-                if registry not in skipped_registries:
-                    skipped_registries[registry] = []
-                skipped_registries[registry].append(container_name)
+            try:
+                registry, image_name, tag = self.parse_image_tag(image)
+                
+                # Check different registries
+                if registry == 'docker.io':
+                    update_info = self.check_dockerhub_update(image_name, tag)
+                    if update_info:
+                        updates.append({
+                            'container': container_name,
+                            'current_image': image,
+                            'update_info': update_info
+                        })
+                        logger.info(f"Update available for {container_name}")
+                elif registry == 'lscr.io':
+                    try:
+                        update_info = self.check_lscr_update(image_name, tag, container_id)
+                        if update_info:
+                            updates.append({
+                                'container': container_name,
+                                'current_image': image,
+                                'update_info': update_info
+                            })
+                            logger.info(f"Update available for {container_name}")
+                    except AttributeError as e:
+                        logger.error(f"AttributeError for {container_name}: {e}")
+                        logger.error(f"This is the .get() error we're looking for!")
+                        import traceback
+                        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+                        # Continue to next container
+                        continue
+                elif registry == 'ghcr.io':
+                    update_info = self.check_ghcr_update(image_name, tag, container_id)
+                    if update_info:
+                        updates.append({
+                            'container': container_name,
+                            'current_image': image,
+                            'update_info': update_info
+                        })
+                        logger.info(f"Update available for {container_name}")
+                elif registry in ['quay.io']:
+                    # These registries could be supported in the future
+                    logger.info(f"Container {container_name} uses {registry} registry (not yet supported)")
+                    if registry not in skipped_registries:
+                        skipped_registries[registry] = []
+                    skipped_registries[registry].append(container_name)
+                else:
+                    logger.debug(f"Container {container_name} uses unsupported registry: {registry}")
+                    if registry not in skipped_registries:
+                        skipped_registries[registry] = []
+                    skipped_registries[registry].append(container_name)
+                    
+            except Exception as e:
+                logger.error(f"Error checking container {container_name}: {e}")
+                logger.error(f"Error type: {type(e)}")
+                import traceback
+                logger.error(f"Full traceback:\n{traceback.format_exc()}")
+                continue
         
         # Log summary of skipped registries
         if skipped_registries:
@@ -463,7 +573,7 @@ docker_hub_password =
     
     def run(self):
         """Main execution method."""
-        logger.info("Starting Docker update check...")
+        logger.info("Starting Docker update check... (v2.0.1)")
         
         try:
             updates, skipped_registries = self.check_container_updates()
