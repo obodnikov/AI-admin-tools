@@ -9,6 +9,7 @@ A Python script that automatically checks running Docker containers for availabl
   - Docker Hub (docker.io) - Full semantic version comparison
   - LinuxServer.io (lscr.io) - Digest-based update detection
   - GitHub Container Registry (ghcr.io) - Digest-based update detection
+  - Red Hat Quay (quay.io) - Digest-based update detection
 - 📱 **Telegram Notifications**: Sends formatted notifications when updates are available
 - 🎯 **Smart Filtering**: 
   - Skip containers with `latest`, `rc`, `beta`, `alpha`, etc. tags
@@ -16,6 +17,7 @@ A Python script that automatically checks running Docker containers for availabl
   - Focus on stable releases only
 - ⏰ **Cron Compatible**: Designed to run automatically via crontab
 - 📝 **Comprehensive Logging**: Detailed logs for troubleshooting
+- 🔧 **Configurable**: Flexible configuration via INI file
 
 ## Requirements
 
@@ -31,6 +33,13 @@ A Python script that automatically checks running Docker containers for availabl
 
 ```bash
 pip3 install requests packaging configparser
+```
+
+Or using a virtual environment (recommended):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Linux/Mac
+pip install requests packaging configparser
 ```
 
 ### 2. Download and Install the Script
@@ -170,11 +179,11 @@ Create `/etc/logrotate.d/docker-update-checker`:
 
 ### Update Detection Process
 
-1. **Container Discovery**: Lists all running Docker containers
+1. **Container Discovery**: Lists all running Docker containers using `docker ps`
 2. **Image Parsing**: Extracts registry, image name, and tag from each container
 3. **Registry-Specific Checks**:
    - **Docker Hub**: Uses API to fetch available tags and compares semantic versions
-   - **LinuxServer.io/GitHub**: Uses `docker manifest inspect` to compare digests
+   - **LinuxServer.io/GitHub/Quay.io**: Uses `docker manifest inspect` to compare digests
 4. **Filtering**: Skips containers with pre-release tags or those in ignore list
 5. **Notification**: Sends consolidated update report to Telegram
 
@@ -198,6 +207,12 @@ Create `/etc/logrotate.d/docker-update-checker`:
 - Supports public images (private requires authentication)
 - Example: `ghcr.io/username/image:v2.0.0`
 
+#### Red Hat Quay (quay.io)
+- Digest-based comparison
+- Supports OCI and Docker manifest formats
+- Works with public and private repositories (with auth)
+- Example: `quay.io/jupyter/tensorflow-notebook:latest`
+
 ## Telegram Notifications
 
 ### Success Notification Format
@@ -213,7 +228,11 @@ Create `/etc/logrotate.d/docker-update-checker`:
    Current: postgres:15.3
    Status: New version available: 15.4
 
-_Checked at 2025-09-06 14:30:00_
+📦 Container: unifi
+   Current: lscr.io/linuxserver/unifi-network-application:7.5.187
+   Status: New version available (digest changed)
+
+_Checked at 2025-09-08 14:30:00_
 ```
 
 ### Error Notification Format
@@ -254,6 +273,10 @@ _Checked at 2025-09-06 14:30:00_
 - **Cause**: `latest` tag is in the skip list by default
 - **Solution**: This is intentional - `latest` always pulls the newest version
 
+#### 6. "'list' object has no attribute 'get'" error
+- **Cause**: Outdated version of the script with old manifest parsing logic
+- **Solution**: Update to the latest version that properly handles OCI manifest format
+
 ### Debug Mode
 
 Run with verbose logging to troubleshoot:
@@ -263,10 +286,11 @@ python3 /opt/docker-update-checker/docker_update_checker.py -v
 ```
 
 This will show:
-- Detailed container checking process
-- API calls and responses
+- Docker commands being executed
+- Manifest parsing details
+- Registry detection logic
+- Digest comparisons
 - Skipped containers and reasons
-- Registry detection details
 
 ## Advanced Configuration
 
@@ -281,11 +305,17 @@ docker_hub_username = your_username
 docker_hub_password = your_password_or_token
 ```
 
-For private ghcr.io or lscr.io images, ensure Docker is authenticated:
+For private ghcr.io, lscr.io, or quay.io images, ensure Docker is authenticated:
 
 ```bash
+# GitHub Container Registry
 docker login ghcr.io
+
+# LinuxServer.io
 docker login lscr.io
+
+# Red Hat Quay
+docker login quay.io
 ```
 
 ### Custom Skip Tags
@@ -327,10 +357,17 @@ ignore_containers = test-container,development-db,temp-nginx
    - Run as a user with Docker permissions
    - Avoid running as root if possible
 
+## Version History
+
+- **v2.1.0** - Added Quay.io support
+- **v2.0.1** - Fixed lscr.io manifest handling for OCI format
+- **v2.0.0** - Added support for multiple registries
+- **v1.0.0** - Initial release with Docker Hub support
+
 ## Limitations
 
-1. **Version Comparison**: Only works with semantic versioning (e.g., 1.2.3, v2.0.0)
-2. **Registry Support**: Currently supports Docker Hub, lscr.io, and ghcr.io
+1. **Version Comparison**: Only works with semantic versioning (e.g., 1.2.3, v2.0.0) for Docker Hub
+2. **Registry Support**: Currently supports Docker Hub, lscr.io, ghcr.io, and quay.io
 3. **Tag Detection**: Cannot detect updates for custom tags without version numbers
 4. **Rate Limits**: Docker Hub API has rate limits (100 requests per 6 hours for anonymous users)
 5. **Digest Comparison**: For non-Docker Hub registries, only detects if image was rebuilt, not version changes
@@ -339,9 +376,10 @@ ignore_containers = test-container,development-db,temp-nginx
 
 To add support for additional registries:
 
-1. Add a new check method (e.g., `check_quayio_update`)
-2. Update the `check_container_updates` method
-3. Add registry-specific logic for version/digest comparison
+1. Add a new check method (e.g., `check_newregistry_update`)
+2. Update the `check_container_updates` method to handle the new registry
+3. Update the `parse_image_tag` method if needed for registry detection
+4. Add registry-specific logic for version/digest comparison
 
 ## Example Configurations
 
@@ -397,6 +435,7 @@ For issues or questions:
 2. Run with verbose mode: `-v` flag
 3. Verify Docker and network connectivity
 4. Ensure Telegram bot is properly configured
+5. Check that Docker manifest inspect works: `docker manifest inspect <image>`
 
 ## License
 
