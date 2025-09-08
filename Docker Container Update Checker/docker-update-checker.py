@@ -437,6 +437,113 @@ docker_hub_password =
             logger.debug(traceback.format_exc())
             return None
     
+    def check_quay_update(self, image_name: str, current_tag: str, container_id: str) -> Optional[str]:
+        """Check if there's a newer version on Quay.io registry."""
+        try:
+            # Skip checking if current tag is in skip list
+            if any(skip in current_tag.lower() for skip in self.skip_tags):
+                logger.debug(f"Skipping update check for quay.io/{image_name}:{current_tag} (tag in skip list)")
+                return None
+            
+            # Get current image digest
+            current_digest = self.get_image_digest(container_id)
+            if not current_digest:
+                logger.debug(f"Could not get current digest for quay.io/{image_name}:{current_tag}")
+                return None
+            
+            logger.debug(f"Current digest: {current_digest}")
+            
+            # Use docker manifest inspect to get remote digest
+            logger.debug(f"Checking latest digest for quay.io/{image_name}:{current_tag}")
+            
+            manifest_output = self.run_docker_command([
+                'manifest', 'inspect', 
+                f'quay.io/{image_name}:{current_tag}'
+            ])
+            
+            if not manifest_output:
+                logger.debug("No manifest output received")
+                return None
+            
+            # Parse the manifest output - Quay.io can use either OCI or Docker format
+            try:
+                manifest_data = json.loads(manifest_output)
+                logger.debug(f"Successfully parsed manifest JSON")
+                
+                remote_digest = None
+                
+                # Check for different manifest formats
+                if isinstance(manifest_data, dict):
+                    # Format 1: OCI manifest list with 'manifests' array
+                    if 'manifests' in manifest_data:
+                        manifests = manifest_data['manifests']
+                        if isinstance(manifests, list) and len(manifests) > 0:
+                            # Look for amd64 architecture
+                            for manifest in manifests:
+                                if isinstance(manifest, dict):
+                                    platform = manifest.get('platform')
+                                    if isinstance(platform, dict):
+                                        if platform.get('architecture') == 'amd64' and platform.get('os') == 'linux':
+                                            remote_digest = manifest.get('digest')
+                                            logger.debug(f"Found amd64/linux digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                                            break
+                            
+                            # If no amd64 found, use first manifest
+                            if not remote_digest and isinstance(manifests[0], dict):
+                                remote_digest = manifests[0].get('digest')
+                                logger.debug(f"Using first manifest digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                    
+                    # Format 2: Single manifest with config
+                    elif 'config' in manifest_data:
+                        config = manifest_data.get('config')
+                        if isinstance(config, dict):
+                            remote_digest = config.get('digest')
+                            logger.debug(f"Found config digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                    
+                    # Format 3: Direct digest field
+                    elif 'digest' in manifest_data:
+                        remote_digest = manifest_data.get('digest')
+                        logger.debug(f"Found direct digest: {remote_digest[:20] if remote_digest else 'None'}...")
+                
+                # Compare digests
+                if remote_digest:
+                    current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                    remote_sha = remote_digest.split(':')[-1] if ':' in remote_digest else remote_digest
+                    
+                    logger.debug(f"Comparing digests:")
+                    logger.debug(f"  Current SHA: {current_sha[:12]}...")
+                    logger.debug(f"  Remote SHA:  {remote_sha[:12]}...")
+                    
+                    if current_sha != remote_sha:
+                        logger.info(f"Update available for quay.io/{image_name}:{current_tag}")
+                        return f"New version available (digest changed)"
+                    else:
+                        logger.debug("Digests match - no update needed")
+                else:
+                    logger.debug("Could not extract remote digest from manifest")
+                    
+            except json.JSONDecodeError as e:
+                logger.debug(f"Failed to parse manifest as JSON: {e}")
+                # Fallback: try to extract digest using regex
+                import re
+                digest_match = re.search(r'sha256:[a-f0-9]{64}', manifest_output)
+                if digest_match:
+                    remote_digest = digest_match.group()
+                    current_sha = current_digest.split(':')[-1] if ':' in current_digest else current_digest
+                    remote_sha = remote_digest.split(':')[-1]
+                    
+                    if current_sha != remote_sha:
+                        logger.info(f"Update available for quay.io/{image_name}:{current_tag}")
+                        return f"New version available (digest changed)"
+            
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Failed to check quay.io for {image_name}:{current_tag}: {e}")
+            import traceback
+            logger.debug(f"Traceback:\n{traceback.format_exc()}")
+            return None
+
     def check_container_updates(self):
         """Check all running containers for updates."""
         containers = self.get_running_containers()
@@ -489,9 +596,9 @@ docker_hub_password =
                             'update_info': update_info
                         })
                         logger.info(f"Update available for {container_name}")
-                elif registry in ['quay.io']:
+                elif registry == 'quay.io':
                     # These registries could be supported in the future
-                    logger.info(f"Container {container_name} uses {registry} registry (not yet supported)")
+                    update_info = self.check_quay_update(image_name, tag, container_id)
                     if registry not in skipped_registries:
                         skipped_registries[registry] = []
                     skipped_registries[registry].append(container_name)
