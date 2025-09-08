@@ -122,31 +122,35 @@ docker_hub_password =
         tag = 'latest'
         registry = 'docker.io'
         
-        if ':' in image and '/' in image.split(':')[-1]:
-            # Port in registry, not a tag
+        # First, separate tag if present
+        if ':' in image and not image.split(':')[-1].count('/'):
+            # Tag is present (and it's not a port number)
             parts = image.rsplit(':', 1)
             name = parts[0]
+            tag = parts[1]
         else:
-            parts = image.rsplit(':', 1)
-            if len(parts) == 2:
-                name, tag = parts
-            else:
-                name = parts[0]
+            name = image
         
         # Check for registry
         if '/' in name:
             parts = name.split('/', 1)
-            if '.' in parts[0] or ':' in parts[0] or parts[0] == 'localhost':
+            # Check if first part looks like a registry
+            # Registries have dots, colons (port), or are localhost
+            # Also check for known registries like quay.io, ghcr.io, lscr.io
+            if ('.' in parts[0] or ':' in parts[0] or 
+                parts[0] == 'localhost' or
+                parts[0] in ['quay.io', 'ghcr.io', 'lscr.io', 'gcr.io', 'registry.gitlab.com']):
                 registry = parts[0]
                 name = parts[1]
             else:
-                # It's a Docker Hub image with namespace
+                # It's a Docker Hub image with namespace (like library/nginx)
                 name = '/'.join(parts)
         
-        # Add library namespace for official images
+        # Add library namespace for official Docker Hub images
         if '/' not in name and registry == 'docker.io':
             name = f'library/{name}'
-            
+        
+        logger.debug(f"Parsed image '{image}' -> registry: '{registry}', name: '{name}', tag: '{tag}'")
         return registry, name, tag
     
     def get_image_digest(self, container_id: str) -> Optional[str]:
@@ -573,7 +577,7 @@ docker_hub_password =
     
     def run(self):
         """Main execution method."""
-        logger.info("Starting Docker update check... (v2.0.1)")
+        logger.info("Starting Docker update check... (v2.1.0)")
         
         try:
             updates, skipped_registries = self.check_container_updates()
