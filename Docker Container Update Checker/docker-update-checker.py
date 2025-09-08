@@ -599,9 +599,13 @@ docker_hub_password =
                 elif registry == 'quay.io':
                     # These registries could be supported in the future
                     update_info = self.check_quay_update(image_name, tag, container_id)
-                    if registry not in skipped_registries:
-                        skipped_registries[registry] = []
-                    skipped_registries[registry].append(container_name)
+                    if update_info:
+                        updates.append({
+                            'container': container_name,
+                            'current_image': image,
+                            'update_info': update_info
+                        })
+                        logger.info(f"Update available for {container_name}")
                 else:
                     logger.debug(f"Container {container_name} uses unsupported registry: {registry}")
                     if registry not in skipped_registries:
