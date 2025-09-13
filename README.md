@@ -1,6 +1,6 @@
 # System Management Tools
 
-This project contains two utility applications designed to help with system administration and maintenance tasks.
+This project contains utility applications designed to help with system administration, maintenance tasks, and web development.
 
 ## Applications
 
@@ -26,6 +26,18 @@ An automated cleanup script designed to remove old and unused kernel packages fr
 - Frees up system disk space
 - Maintains system boot reliability
 
+### Web Icons Generator
+**Directory:** `Web Icons Generator/`
+
+A smart bash script that automatically generates all required PWA (Progressive Web App) icons from a single SVG source file. Compatible with both ImageMagick 6.x and 7.x, making it work across different operating systems.
+
+**Key Features:**
+- Generates complete PWA icon set from SVG
+- Smart detection of existing files
+- Cross-platform ImageMagick compatibility
+- Creates maskable icons with proper safe zones
+- Color-coded progress reporting
+
 ## Usage
 
 Each application is contained within its respective directory and includes its own documentation and setup instructions. Please refer to the individual directories for specific usage guidelines and requirements.
@@ -34,4 +46,5 @@ Each application is contained within its respective directory and includes its o
 
 - Docker (for Docker Container Update Checker)
 - Ubuntu/Debian-based system (for Ubuntu Kernel Cleanup Script)
+- ImageMagick and SVG source file (for Web Icons Generator)
 - Appropriate system permissions for administration tasks
