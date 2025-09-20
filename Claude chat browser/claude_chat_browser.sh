@@ -183,8 +183,9 @@ search_content() {
                     if grep -q -i "$search_term" "$jsonl_file" 2>/dev/null; then
                         echo -e "${GREEN}📝 Found in: $project_name/${chat_name}${NC}"
                         
-                        # Show matching lines with context
-                        if [[ "$PARSER" = "python" ]]; then
+                        # Show matching lines with context using our Python parser
+                        local parser_script="/tmp/claude_jsonl_parser.py"
+                        if [[ -f "$parser_script" ]]; then
                             python3 -c "
 import json
 import sys
@@ -194,16 +195,28 @@ with open('$jsonl_file', 'r') as f:
     for i, line in enumerate(f, 1):
         try:
             data = json.loads(line)
-            content = data.get('content', '')
-            if search_term in content.lower():
-                role = data.get('role', 'unknown')
+            message = data.get('message', {})
+            content = message.get('content', '')
+            role = message.get('role', 'unknown')
+            
+            # Check string content
+            if isinstance(content, str) and search_term in content.lower():
                 preview = content[:100] + '...' if len(content) > 100 else content
                 print(f'   Line {i} ({role}): {preview}')
+            # Check list content
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'text':
+                        text = item.get('text', '')
+                        if search_term in text.lower():
+                            preview = text[:100] + '...' if len(text) > 100 else text
+                            print(f'   Line {i} ({role}): {preview}')
+                            break
         except:
             pass
-"
+" | head -3
                         else
-                            # Fallback with jq
+                            # Fallback with grep
                             grep -i -n "$search_term" "$jsonl_file" | head -3 | while read line; do
                                 echo "   $line"
                             done
@@ -471,10 +484,274 @@ view_chat() {
     echo "================================"
     echo ""
     
-    if [[ "$PARSER" = "python" ]]; then
-        parse_jsonl_python "$file" "$format" "$output_file"
+    # Create temporary Python parser if it doesn't exist
+    local parser_script="/tmp/claude_jsonl_parser.py"
+    if [[ ! -f "$parser_script" ]]; then
+        cat > "$parser_script" << 'EOF'
+#!/usr/bin/env python3
+"""
+Claude JSONL Chat Parser
+Parses Claude Desktop's JSONL chat files into readable format
+"""
+
+import json
+import sys
+import argparse
+from datetime import datetime
+from pathlib import Path
+
+def format_timestamp(ts):
+    """Format timestamp to readable format"""
+    try:
+        if ts is None:
+            return 'No timestamp'
+        if isinstance(ts, str):
+            # Parse ISO format (like 2025-09-20T12:28:46.794Z)
+            try:
+                dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                return dt.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                return ts
+        if isinstance(ts, (int, float)):
+            # Handle both seconds and milliseconds timestamps
+            if ts > 1000000000000:  # Milliseconds
+                return datetime.fromtimestamp(ts / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            else:  # Seconds
+                return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        return str(ts)
+    except:
+        return 'Invalid timestamp'
+
+def format_content(content, role):
+    """Format message content"""
+    if content is None:
+        return f'[Empty {role} message]'
+    
+    if not content:
+        return f'[No content in {role} message]'
+    
+    # Handle string content
+    if isinstance(content, str):
+        return content.strip() if content.strip() else f'[Empty {role} message]'
+    
+    # Handle list content (Claude's structured format)
+    if isinstance(content, list):
+        text_parts = []
+        for item in content:
+            if isinstance(item, dict):
+                if item.get('type') == 'text':
+                    text = item.get('text', '').strip()
+                    if text:
+                        text_parts.append(text)
+                elif item.get('type') == 'tool_use':
+                    tool_name = item.get('name', 'unknown')
+                    tool_input = item.get('input', {})
+                    text_parts.append(f'🔧 [Tool Use: {tool_name}]')
+                    if tool_input:
+                        # Show first few parameters
+                        if 'file_path' in tool_input:
+                            text_parts.append(f'   File: {tool_input["file_path"]}')
+                        elif 'todos' in tool_input:
+                            todos = tool_input.get('todos', [])
+                            if todos:
+                                text_parts.append(f'   Todos: {len(todos)} items')
+                                for todo in todos[:2]:  # Show first 2 todos
+                                    content = todo.get('content', 'Unknown todo')
+                                    status = todo.get('status', 'unknown')
+                                    text_parts.append(f'     • {content} ({status})')
+                        elif 'old_string' in tool_input and 'new_string' in tool_input:
+                            old_preview = tool_input['old_string'][:50] + '...' if len(tool_input['old_string']) > 50 else tool_input['old_string']
+                            text_parts.append(f'   Replacing: {old_preview}')
+                        else:
+                            params = []
+                            for k, v in list(tool_input.items())[:3]:
+                                if isinstance(v, str) and len(v) > 50:
+                                    params.append(f'{k}={v[:50]}...')
+                                else:
+                                    params.append(f'{k}={v}')
+                            if params:
+                                text_parts.append(f'   Parameters: {", ".join(params)}')
+                elif item.get('type') == 'tool_result':
+                    result = item.get('content', '')
+                    if isinstance(result, str):
+                        preview = result[:200] + '...' if len(result) > 200 else result
+                        text_parts.append(f'⚙️ [Tool Result: {preview}]')
+                    else:
+                        text_parts.append('⚙️ [Tool Result]')
+                elif item.get('type') == 'image':
+                    text_parts.append('🖼️ [Image attachment]')
+            elif isinstance(item, str):
+                if item.strip():
+                    text_parts.append(item.strip())
+            else:
+                text_parts.append(str(item))
+        
+        result = '\n'.join(text_parts) if text_parts else f'[Empty {role} message]'
+        return result
+    
+    # Handle dict content
+    if isinstance(content, dict):
+        if 'text' in content:
+            return content['text'].strip() if content['text'] else f'[Empty {role} message]'
+        elif 'content' in content:
+            return format_content(content['content'], role)
+        else:
+            return f'[Complex {role} data: {str(content)[:100]}...]'
+    
+    return str(content) if content else f'[Empty {role} message]'
+
+def format_tool_result(tool_result, role):
+    """Format tool result information"""
+    if not tool_result:
+        return ''
+    
+    if isinstance(tool_result, str):
+        return f'\n⚙️ [Tool Output]: {tool_result[:200]}...' if len(tool_result) > 200 else f'\n⚙️ [Tool Output]: {tool_result}'
+    
+    if isinstance(tool_result, dict):
+        result_type = tool_result.get('type', 'unknown')
+        
+        if result_type == 'text' and 'file' in tool_result:
+            file_info = tool_result['file']
+            file_path = file_info.get('filePath', 'unknown')
+            lines = file_info.get('numLines', 0)
+            return f'\n📄 [File Read]: {file_path} ({lines} lines)'
+        
+        elif 'newTodos' in tool_result:
+            new_todos = tool_result.get('newTodos', [])
+            old_todos = tool_result.get('oldTodos', [])
+            return f'\n✅ [Todo Update]: {len(old_todos)} → {len(new_todos)} todos'
+        
+        elif 'filePath' in tool_result and 'newString' in tool_result:
+            file_path = tool_result.get('filePath', 'unknown')
+            return f'\n✏️ [File Edit]: {file_path}'
+        
+        else:
+            return f'\n⚙️ [Tool Result]: {result_type}'
+    
+    return f'\n⚙️ [Tool Result]: {str(tool_result)[:100]}...'
+
+def parse_jsonl_file(file_path, format_type='pretty', output_file=None):
+    """Parse JSONL file and format output"""
+    
+    if not Path(file_path).exists():
+        print(f"❌ File not found: {file_path}")
+        return
+    
+    chat_messages = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line_num, line in enumerate(f, 1):
+            try:
+                data = json.loads(line.strip())
+                if data and data.get('type') != 'summary':  # Skip summary entries
+                    chat_messages.append(data)
+            except json.JSONDecodeError as e:
+                print(f'Warning: Skipping invalid JSON on line {line_num}: {e}', file=sys.stderr)
+            except Exception as e:
+                print(f'Warning: Error processing line {line_num}: {e}', file=sys.stderr)
+
+    if not chat_messages:
+        print('No valid messages found')
+        return
+
+    output_lines = []
+
+    if format_type == 'markdown':
+        output_lines.append('# Claude Chat Export\n')
+        output_lines.append(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+        output_lines.append(f'Total messages: {len(chat_messages)}\n\n')
+
+    msg_count = 0
+    for i, entry in enumerate(chat_messages, 1):
+        # Extract the nested message structure
+        message = entry.get('message', {})
+        
+        # Skip if no message content
+        if not message:
+            continue
+        
+        msg_count += 1
+        
+        # Get basic message info
+        role = message.get('role', entry.get('type', 'unknown'))
+        content = message.get('content', '')
+        timestamp = format_timestamp(entry.get('timestamp'))
+        tool_result = entry.get('toolUseResult')
+        
+        # Format the main content
+        formatted_content = format_content(content, role)
+        
+        # Add tool result if present
+        if tool_result:
+            tool_output = format_tool_result(tool_result, role)
+            if tool_output:
+                formatted_content += tool_output
+        
+        # Skip truly empty messages
+        if not formatted_content or formatted_content.strip() in ['[Empty unknown message]', '[No content in unknown message]']:
+            continue
+        
+        if format_type == 'markdown':
+            output_lines.append(f'## Message {msg_count} - {role.title()}\n')
+            output_lines.append(f'**Time:** {timestamp}\n\n')
+            output_lines.append(f'{formatted_content}\n\n')
+            output_lines.append('---\n\n')
+        
+        elif format_type == 'raw':
+            output_lines.append(json.dumps(entry, indent=2))
+        
+        else:  # pretty format
+            if role == 'user':
+                color = '\033[0;32m'  # Green
+                icon = '👤'
+            elif role == 'assistant':
+                color = '\033[0;34m'  # Blue  
+                icon = '🤖'
+            elif role == 'system':
+                color = '\033[0;35m'  # Purple
+                icon = '⚙️'
+            else:
+                color = '\033[0;33m'  # Yellow
+                icon = '❓'
+            
+            reset = '\033[0m'
+            
+            output_lines.append(f'{color}{icon} Message {msg_count} - {role.title()}{reset}')
+            output_lines.append(f'🕒 {timestamp}')
+            output_lines.append(f'💬 {formatted_content}')
+            output_lines.append('─' * 80)
+
+    result = '\n'.join(output_lines)
+
+    if output_file and output_file != '-':
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(result)
+        print(f'Chat exported to: {output_file}')
+    else:
+        print(result)
+
+def main():
+    parser = argparse.ArgumentParser(description='Parse Claude JSONL chat files')
+    parser.add_argument('file', help='JSONL file to parse')
+    parser.add_argument('-f', '--format', choices=['pretty', 'markdown', 'raw'], 
+                       default='pretty', help='Output format')
+    parser.add_argument('-o', '--output', help='Output file (default: stdout)')
+    
+    args = parser.parse_args()
+    
+    parse_jsonl_file(args.file, args.format, args.output)
+
+if __name__ == '__main__':
+    main()
+EOF
+        chmod +x "$parser_script"
+    fi
+    
+    # Use the Python parser
+    if [[ -n "$output_file" && "$output_file" != "-" ]]; then
+        python3 "$parser_script" "$file" --format "$format" --output "$output_file"
     else
-        parse_jsonl_jq "$file" "$format" "$output_file"
+        python3 "$parser_script" "$file" --format "$format"
     fi
 }
 
