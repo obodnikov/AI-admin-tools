@@ -1,740 +1,698 @@
-#!/bin/bash
+🔍 Analyzing: b40d8528-f9d1-41c5-a4c1-60a2b0408660.jsonl
+============================================================
+📊 Analysis Results:
+   Total lines: 44
+   Valid messages: 44
+   JSON errors: 0
 
-# Claude JSONL Chat Reader
-# Read and convert Claude project JSONL chat files to readable format
+📋 Field Structure:
+   cwd:
+      str: 43 times (97.7%)
+      Examples:
+         /home/mike/src/pollen-web-application
+         /home/mike/src/pollen-web-application
+         /home/mike/src/pollen-web-application
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-PURPLE='\033[0;35m'
-NC='\033[0m' # No Color
+   gitBranch:
+      str: 43 times (97.7%)
+      Examples:
+         fix/mobile-view
+         fix/mobile-view
+         fix/mobile-view
 
-CLAUDE_DIR="$HOME/.claude/projects"
+   isSidechain:
+      bool: 43 times (97.7%)
+      Examples:
+         False
+         False
+         False
 
-# Check if python3 and jq are available
-PYTHON_AVAILABLE=false
-JQ_AVAILABLE=false
+   leafUuid:
+      str: 1 times (2.3%)
+      Examples:
+         60221d01-a138-4578-bb01-d3b7ee58ec94
 
-if command -v python3 &> /dev/null; then
-    PYTHON_AVAILABLE=true
-fi
+   message:
+      dict: 43 times (97.7%)
+      Examples:
+         {'role': 'user', 'content': 'check cript.js and detailed_history_styles.css. ...
+         {'role': 'user', 'content': [{'tool_use_id': 'toolu_01W2TcNZugJaSsxLLHsHbGsK'...
+         {'role': 'user', 'content': [{'tool_use_id': 'toolu_01MHtyKWPkYYH759hTYVQJcE'...
 
-if command -v jq &> /dev/null; then
-    JQ_AVAILABLE=true
-fi
+   message.content:
+      list[dict]: 40 times (90.9%)
+      str: 3 times (6.8%)
+      Examples:
+         check cript.js and detailed_history_styles.css. For container history-day, hi...
+         [{'type': 'text', 'text': "I'll check the `script.js` and `detailed_history_s...
+         [{'type': 'tool_use', 'id': 'toolu_01MHtyKWPkYYH759hTYVQJcE', 'name': 'Read',...
 
-show_help() {
-    cat << EOF
-Claude JSONL Chat Reader
+   message.content[0].content:
+      str: 16 times (36.4%)
+      Examples:
+              1→/* Enhanced Pollen History Styles - Individual Type Bars */
+     2→
+  ...
+              1→// Enhanced Vercel PollenTracker with Individual Pollen Type History
+ ...
+         Todos have been modified successfully. Ensure that you continue to use the to...
 
-USAGE:
-    $0 [OPTIONS] [PROJECT_NAME]
+   message.content[0].id:
+      str: 16 times (36.4%)
+      Examples:
+         toolu_01MHtyKWPkYYH759hTYVQJcE
+         toolu_01W2TcNZugJaSsxLLHsHbGsK
+         toolu_01KKrQBWvu9ygW4gpMafsXHZ
 
-OPTIONS:
-    -l, --list          List all available projects
-    -s, --search TERM   Search for projects containing TERM
-    -r, --recent N      Show N most recently modified projects (default: 10)
-    -f, --format TYPE   Output format: pretty, markdown, raw (default: pretty)
-    -o, --output FILE   Save output to file instead of displaying
-    -c, --content TERM  Search for content within chats
-    -h, --help          Show this help
+   message.content[0].input:
+      dict: 16 times (36.4%)
+      Examples:
+         {'file_path': '/home/mike/src/pollen-web-application/script.js'}
+         {'file_path': '/home/mike/src/pollen-web-application/detailed_history_styles....
+         {'todos': [{'content': 'Remove hardcoded heights in CSS for history container...
 
-FORMATS:
-    pretty     - Colored terminal output (default)
-    markdown   - Markdown format for saving
-    raw        - Raw JSON output
+   message.content[0].input.edits:
+      list[dict]: 1 times (2.3%)
 
-EXAMPLES:
-    $0                           # Interactive project browser
-    $0 -l                        # List all projects
-    $0 -r 5                      # Show 5 most recent projects
-    $0 -s docker                 # Search for projects with 'docker' in name
-    $0 my-project                # View specific project chats
-    $0 my-project -f markdown    # View as markdown
-    $0 my-project -o chat.md     # Save to markdown file
-    $0 -c "update checker"       # Search chat content
+   message.content[0].input.edits[0].new_string:
+      str: 1 times (2.3%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
 
-REQUIREMENTS:
-    - python3 (recommended) or jq for JSON parsing
-    
-INSTALLATION:
-    # Ubuntu/Debian
-    sudo apt install python3 jq
-    
-    # macOS
-    brew install python3 jq
-EOF
+   message.content[0].input.edits[0].old_string:
+      str: 1 times (2.3%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
+
+   message.content[0].input.edits[1].new_string:
+      str: 1 times (2.3%)
+      Examples:
+         /* Enhanced chart for individual bars */
+.history-chart {
+    display: flex;
+...
+
+   message.content[0].input.edits[1].old_string:
+      str: 1 times (2.3%)
+      Examples:
+         /* Enhanced chart for individual bars */
+.history-chart {
+    display: flex;
+...
+
+   message.content[0].input.file_path:
+      str: 12 times (27.3%)
+      Examples:
+         /home/mike/src/pollen-web-application/script.js
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+
+   message.content[0].input.new_string:
+      str: 7 times (15.9%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
+             .day-bars-container {
+        gap: 2px;
+        min-width: 70px;
+    }
+             .day-bars-container {
+        gap: 1px;
+        min-width: 60px;
+    }
+
+   message.content[0].input.old_string:
+      str: 7 times (15.9%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
+             .day-bars-container {
+        height: 60px;
+        gap: 2px;
+        min...
+             .day-bars-container {
+        height: 50px;
+        gap: 1px;
+        min...
+
+   message.content[0].input.todos:
+      list[dict]: 4 times (9.1%)
+      Examples:
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+
+   message.content[0].input.todos[0].activeForm:
+      str: 4 times (9.1%)
+      Examples:
+         Removing hardcoded heights in CSS for history containers
+         Removing hardcoded heights in CSS for history containers
+         Removing hardcoded heights in CSS for history containers
+
+   message.content[0].input.todos[0].content:
+      str: 4 times (9.1%)
+      Examples:
+         Remove hardcoded heights in CSS for history containers
+         Remove hardcoded heights in CSS for history containers
+         Remove hardcoded heights in CSS for history containers
+
+   message.content[0].input.todos[0].status:
+      str: 4 times (9.1%)
+      Examples:
+         pending
+         in_progress
+         completed
+
+   message.content[0].input.todos[1].activeForm:
+      str: 4 times (9.1%)
+      Examples:
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+
+   message.content[0].input.todos[1].content:
+      str: 4 times (9.1%)
+      Examples:
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+
+   message.content[0].input.todos[1].status:
+      str: 4 times (9.1%)
+      Examples:
+         pending
+         pending
+         in_progress
+
+   message.content[0].is_error:
+      bool: 1 times (2.3%)
+      Examples:
+         True
+
+   message.content[0].name:
+      str: 16 times (36.4%)
+      Examples:
+         Read
+         Read
+         TodoWrite
+
+   message.content[0].text:
+      str: 8 times (18.2%)
+      Examples:
+         I'll check the `script.js` and `detailed_history_styles.css` files to examine...
+         I can see the issue. In the CSS file, the heights for the history containers ...
+         Let me check the actual height values again and fix them one by one:
+
+   message.content[0].tool_use_id:
+      str: 16 times (36.4%)
+      Examples:
+         toolu_01W2TcNZugJaSsxLLHsHbGsK
+         toolu_01MHtyKWPkYYH759hTYVQJcE
+         toolu_01KKrQBWvu9ygW4gpMafsXHZ
+
+   message.content[0].type:
+      str: 40 times (90.9%)
+      Examples:
+         text
+         tool_use
+         tool_use
+
+   message.id:
+      str: 24 times (54.5%)
+      Examples:
+         msg_01DSAthFdhf7duRVg2N45ztK
+         msg_01DSAthFdhf7duRVg2N45ztK
+         msg_01DSAthFdhf7duRVg2N45ztK
+
+   message.model:
+      str: 24 times (54.5%)
+      Examples:
+         claude-sonnet-4-20250514
+         claude-sonnet-4-20250514
+         claude-sonnet-4-20250514
+
+   message.role:
+      str: 43 times (97.7%)
+      Examples:
+         user
+         assistant
+         assistant
+
+   message.stop_reason:
+      null: 24 times (54.5%)
+      Examples:
+         None
+         None
+         None
+
+   message.stop_sequence:
+      null: 24 times (54.5%)
+      Examples:
+         None
+         None
+         None
+
+   message.type:
+      str: 24 times (54.5%)
+      Examples:
+         message
+         message
+         message
+
+   message.usage:
+      dict: 24 times (54.5%)
+
+   message.usage.cache_creation:
+      dict: 24 times (54.5%)
+      Examples:
+         {'ephemeral_5m_input_tokens': 10388, 'ephemeral_1h_input_tokens': 0}
+         {'ephemeral_5m_input_tokens': 10388, 'ephemeral_1h_input_tokens': 0}
+         {'ephemeral_5m_input_tokens': 10388, 'ephemeral_1h_input_tokens': 0}
+
+   message.usage.cache_creation.ephemeral_1h_input_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         0
+         0
+         0
+
+   message.usage.cache_creation.ephemeral_5m_input_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         10388
+         10388
+         10388
+
+   message.usage.cache_creation_input_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         10388
+         10388
+         10388
+
+   message.usage.cache_read_input_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         4735
+         4735
+         4735
+
+   message.usage.input_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         4
+         4
+         4
+
+   message.usage.output_tokens:
+      int: 24 times (54.5%)
+      Examples:
+         3
+         3
+         168
+
+   message.usage.service_tier:
+      str: 24 times (54.5%)
+      Examples:
+         standard
+         standard
+         standard
+
+   parentUuid:
+      str: 42 times (95.5%)
+      null: 1 times (2.3%)
+      Examples:
+         None
+         0014cd37-b07c-404f-95bd-8a7a93270e5c
+         b76f8a7c-da86-4ec5-a791-7e254cdceaa3
+
+   requestId:
+      str: 24 times (54.5%)
+      Examples:
+         req_011CTKeqc4qGZ7hWhYTH1kw7
+         req_011CTKeqc4qGZ7hWhYTH1kw7
+         req_011CTKeqc4qGZ7hWhYTH1kw7
+
+   sessionId:
+      str: 43 times (97.7%)
+      Examples:
+         b40d8528-f9d1-41c5-a4c1-60a2b0408660
+         b40d8528-f9d1-41c5-a4c1-60a2b0408660
+         b40d8528-f9d1-41c5-a4c1-60a2b0408660
+
+   summary:
+      str: 1 times (2.3%)
+      Examples:
+         Vercel Pollen Forecast App: Comprehensive Documentation Update
+
+   timestamp:
+      str: 43 times (97.7%)
+      Examples:
+         2025-09-20T12:28:46.794Z
+         2025-09-20T12:28:50.012Z
+         2025-09-20T12:28:50.535Z
+
+   toolUseResult:
+      dict: 15 times (34.1%)
+      str: 1 times (2.3%)
+      Examples:
+         {'type': 'text', 'file': {'filePath': '/home/mike/src/pollen-web-application/...
+         {'type': 'text', 'file': {'filePath': '/home/mike/src/pollen-web-application/...
+         {'oldTodos': [], 'newTodos': [{'content': 'Remove hardcoded heights in CSS fo...
+
+   toolUseResult.file:
+      dict: 4 times (9.1%)
+
+   toolUseResult.file.content:
+      str: 4 times (9.1%)
+      Examples:
+         /* Enhanced Pollen History Styles - Individual Type Bars */
+
+/* Base styles f...
+         // Enhanced Vercel PollenTracker with Individual Pollen Type History
+class De...
+         # Pollen Tracker 🌿
+
+A modern, responsive web application that provides real-t...
+
+   toolUseResult.file.filePath:
+      str: 4 times (9.1%)
+      Examples:
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+         /home/mike/src/pollen-web-application/script.js
+         /home/mike/src/pollen-web-application/README.md
+
+   toolUseResult.file.numLines:
+      int: 4 times (9.1%)
+      Examples:
+         704
+         1034
+         394
+
+   toolUseResult.file.startLine:
+      int: 4 times (9.1%)
+      Examples:
+         1
+         1
+         1
+
+   toolUseResult.file.totalLines:
+      int: 4 times (9.1%)
+      Examples:
+         704
+         1034
+         394
+
+   toolUseResult.filePath:
+      str: 7 times (15.9%)
+      Examples:
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+         /home/mike/src/pollen-web-application/detailed_history_styles.css
+
+   toolUseResult.newString:
+      str: 7 times (15.9%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
+             .day-bars-container {
+        gap: 2px;
+        min-width: 70px;
+    }
+             .day-bars-container {
+        gap: 1px;
+        min-width: 60px;
+    }
+
+   toolUseResult.newTodos:
+      list[dict]: 4 times (9.1%)
+      Examples:
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+         [{'content': 'Remove hardcoded heights in CSS for history containers', 'statu...
+
+   toolUseResult.newTodos[0].activeForm:
+      str: 4 times (9.1%)
+      Examples:
+         Removing hardcoded heights in CSS for history containers
+         Removing hardcoded heights in CSS for history containers
+         Removing hardcoded heights in CSS for history containers
+
+   toolUseResult.newTodos[0].content:
+      str: 4 times (9.1%)
+      Examples:
+         Remove hardcoded heights in CSS for history containers
+         Remove hardcoded heights in CSS for history containers
+         Remove hardcoded heights in CSS for history containers
+
+   toolUseResult.newTodos[0].status:
+      str: 4 times (9.1%)
+      Examples:
+         pending
+         in_progress
+         completed
+
+   toolUseResult.newTodos[1].activeForm:
+      str: 4 times (9.1%)
+      Examples:
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+         Modifying JavaScript to calculate dynamic heights based on max pollen values
+
+   toolUseResult.newTodos[1].content:
+      str: 4 times (9.1%)
+      Examples:
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+         Modify JavaScript to calculate dynamic heights based on max pollen values
+
+   toolUseResult.newTodos[1].status:
+      str: 4 times (9.1%)
+      Examples:
+         pending
+         pending
+         in_progress
+
+   toolUseResult.oldString:
+      str: 7 times (15.9%)
+      Examples:
+         /* Container for individual pollen type bars */
+.day-bars-container {
+    dis...
+             .day-bars-container {
+        height: 60px;
+        gap: 2px;
+        min...
+             .day-bars-container {
+        height: 50px;
+        gap: 1px;
+        min...
+
+   toolUseResult.oldTodos:
+      list[empty]: 4 times (9.1%)
+      Examples:
+         []
+         []
+         []
+
+   toolUseResult.originalFile:
+      str: 7 times (15.9%)
+      Examples:
+         /* Enhanced Pollen History Styles - Individual Type Bars */
+
+/* Base styles f...
+         /* Enhanced Pollen History Styles - Individual Type Bars */
+
+/* Base styles f...
+         /* Enhanced Pollen History Styles - Individual Type Bars */
+
+/* Base styles f...
+
+   toolUseResult.replaceAll:
+      bool: 7 times (15.9%)
+      Examples:
+         False
+         False
+         False
+
+   toolUseResult.structuredPatch:
+      list[dict]: 7 times (15.9%)
+      Examples:
+         [{'oldStart': 70, 'oldLines': 7, 'newStart': 70, 'newLines': 6, 'lines': ['  ...
+         [{'oldStart': 345, 'oldLines': 7, 'newStart': 345, 'newLines': 6, 'lines': ['...
+         [{'oldStart': 408, 'oldLines': 7, 'newStart': 408, 'newLines': 6, 'lines': ['...
+
+   toolUseResult.structuredPatch[0].lines:
+      list[str]: 7 times (15.9%)
+
+   toolUseResult.structuredPatch[0].newLines:
+      int: 7 times (15.9%)
+      Examples:
+         6
+         6
+         6
+
+   toolUseResult.structuredPatch[0].newStart:
+      int: 7 times (15.9%)
+      Examples:
+         70
+         345
+         408
+
+   toolUseResult.structuredPatch[0].oldLines:
+      int: 7 times (15.9%)
+      Examples:
+         7
+         7
+         7
+
+   toolUseResult.structuredPatch[0].oldStart:
+      int: 7 times (15.9%)
+      Examples:
+         70
+         345
+         408
+
+   toolUseResult.structuredPatch[1].lines:
+      list[str]: 1 times (2.3%)
+
+   toolUseResult.structuredPatch[1].newLines:
+      int: 1 times (2.3%)
+      Examples:
+         7
+
+   toolUseResult.structuredPatch[1].newStart:
+      int: 1 times (2.3%)
+      Examples:
+         428
+
+   toolUseResult.structuredPatch[1].oldLines:
+      int: 1 times (2.3%)
+      Examples:
+         7
+
+   toolUseResult.structuredPatch[1].oldStart:
+      int: 1 times (2.3%)
+      Examples:
+         412
+
+   toolUseResult.type:
+      str: 4 times (9.1%)
+      Examples:
+         text
+         text
+         text
+
+   toolUseResult.userModified:
+      bool: 7 times (15.9%)
+      Examples:
+         False
+         False
+         False
+
+   type:
+      str: 44 times (100.0%)
+      Examples:
+         summary
+         user
+         assistant
+
+   userType:
+      str: 43 times (97.7%)
+      Examples:
+         external
+         external
+         external
+
+   uuid:
+      str: 43 times (97.7%)
+      Examples:
+         0014cd37-b07c-404f-95bd-8a7a93270e5c
+         b76f8a7c-da86-4ec5-a791-7e254cdceaa3
+         4dd7eda1-7593-4589-a2aa-31e418d6d9f4
+
+   version:
+      str: 43 times (97.7%)
+      Examples:
+         1.0.108
+         1.0.108
+         1.0.108
+
+📝 Sample Messages:
+   Message 1 (Line 1):
+      Raw JSON: {
+        "type": "summary",
+        "summary": "Vercel Pollen Forecast App: Comprehensive Documentation Update",
+        "leafUuid": "60221d01-a138-4578-bb01-d3b7ee58ec94"
 }
 
-check_dependencies() {
-    if [[ "$PYTHON_AVAILABLE" = false && "$JQ_AVAILABLE" = false ]]; then
-        echo -e "${RED}❌ Neither python3 nor jq found!${NC}"
-        echo ""
-        echo "Please install one of them:"
-        echo "  Ubuntu/Debian: sudo apt install python3 jq"
-        echo "  macOS: brew install python3 jq"
-        echo "  CentOS/RHEL: sudo yum install python3 jq"
-        exit 1
-    fi
-    
-    if [[ "$PYTHON_AVAILABLE" = true ]]; then
-        PARSER="python"
-    else
-        PARSER="jq"
-        echo -e "${YELLOW}💡 Using jq parser. Install python3 for better formatting.${NC}"
-    fi
+   Message 2 (Line 2):
+      Raw JSON: {
+        "parentUuid": null,
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/home/mike/src/pollen-web-application",
+        "sessionId": "b40d8528-f9d1-41c5-a4c1-60a2b0408660",
+        "version": "1.0.108",
+        "gitBranch": "fix/mobile-view",
+        "type": "user",
+        "message": {
+                "role": "user",
+                "content": "check cript.js and detailed_history_styles.css. For container history-day, history-day.today  and day-bars-container height should be generated not hardcoded. Height should be based on max pollen-bar presented in day-bars-container"
+        },
+        "uuid": "0014cd37-b07c-404f-95bd-8a7a93270e5c",
+        "timestamp": "2025-09-20T12:28:46.794Z"
 }
 
-check_claude_dir() {
-    if [[ ! -d "$CLAUDE_DIR" ]]; then
-        echo -e "${RED}❌ Claude projects directory not found: $CLAUDE_DIR${NC}"
-        echo "Make sure you have Claude Desktop installed and have created projects."
-        exit 1
-    fi
+   Message 3 (Line 3):
+      Raw JSON: {
+        "parentUuid": "0014cd37-b07c-404f-95bd-8a7a93270e5c",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/home/mike/src/pollen-web-application",
+        "sessionId": "b40d8528-f9d1-41c5-a4c1-60a2b0408660",
+        "version": "1.0.108",
+        "gitBranch": "fix/mobile-view",
+        "message": {
+                "id": "msg_01DSAthFdhf7duRVg2N45ztK",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-sonnet-4-20250514",
+                "content": [
+                        {
+                                "type": "text",
+                                "text": "I'll check the `script.js` and `detailed_history_styles.css` files to examine the height handling for the history containers and make them dynamic based on the maximum pollen bar height."
+                        }
+                ],
+                "stop_reason": null,
+                "stop_sequence": null,
+                "usage": {
+                        "input_tokens": 4,
+                        "cache_creation_input_tokens": 10388,
+                        "cache_read_input_tokens": 4735,
+                        "cache_creation": {
+                                "ephemeral_5m_input_tokens": 10388,
+                                "ephemeral_1h_input_tokens": 0
+                        },
+                        "output_tokens": 3,
+                        "service_tier": "standard"
+                }
+        },
+        "requestId": "req_011CTKeqc4qGZ7hWhYTH1kw7",
+        "type": "assistant",
+        "uuid": "b76f8a7c-da86-4ec5-a791-7e254cdceaa3",
+        "timestamp": "2025-09-20T12:28:50.012Z"
 }
 
-get_project_info() {
-    local project_dir="$1"
-    local project_name=$(basename "$project_dir")
-    local jsonl_files=($(find "$project_dir" -name "*.jsonl" -type f 2>/dev/null))
-    local file_count=${#jsonl_files[@]}
-    local last_modified=""
-    local total_messages=0
-    
-    if [[ $file_count -gt 0 ]]; then
-        # Get most recent modification time
-        last_modified=$(find "$project_dir" -name "*.jsonl" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -n | tail -1)
-        if [[ -n "$last_modified" ]]; then
-            last_modified=$(date -d "@$last_modified" "+%Y-%m-%d %H:%M" 2>/dev/null || date -r "$last_modified" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "unknown")
-        fi
-        
-        # Count total messages across all jsonl files
-        for file in "${jsonl_files[@]}"; do
-            local count=$(wc -l < "$file" 2>/dev/null || echo 0)
-            total_messages=$((total_messages + count))
-        done
-    fi
-    
-    echo "$project_name|$file_count|$total_messages|$last_modified|$project_dir"
-}
+🔍 Pattern Analysis:
+   Roles: {'no_role': 44}
+   Content types: {'null': 44}
+   Messages with timestamps: 43/44
 
-list_projects() {
-    echo -e "${BLUE}📁 Available Claude Projects${NC}"
-    echo "================================"
-    
-    if [[ ! -d "$CLAUDE_DIR" || -z "$(ls -A "$CLAUDE_DIR" 2>/dev/null)" ]]; then
-        echo -e "${YELLOW}No projects found in $CLAUDE_DIR${NC}"
-        return
-    fi
-    
-    echo -e "${CYAN}Project Name                 Chats  Messages   Last Modified        ${NC}"
-    echo "------------------------------------------------------------------------"
-    
-    for project_dir in "$CLAUDE_DIR"/*; do
-        if [[ -d "$project_dir" ]]; then
-            info=$(get_project_info "$project_dir")
-            IFS='|' read -r name files messages modified path <<< "$info"
-            printf "%-28s %5s  %8s   %s\n" "$name" "$files" "$messages" "$modified"
-        fi
-    done
-}
-
-search_projects() {
-    local search_term="$1"
-    echo -e "${BLUE}🔍 Searching for projects containing: '$search_term'${NC}"
-    echo "================================================"
-    
-    found=false
-    for project_dir in "$CLAUDE_DIR"/*; do
-        if [[ -d "$project_dir" ]]; then
-            project_name=$(basename "$project_dir")
-            if [[ "$project_name" == *"$search_term"* ]]; then
-                info=$(get_project_info "$project_dir")
-                IFS='|' read -r name files messages modified path <<< "$info"
-                echo -e "${GREEN}✅ $name${NC} ($files chats, $messages messages, modified: $modified)"
-                found=true
-            fi
-        fi
-    done
-    
-    if [[ "$found" = false ]]; then
-        echo -e "${YELLOW}No projects found matching '$search_term'${NC}"
-    fi
-}
-
-search_content() {
-    local search_term="$1"
-    echo -e "${BLUE}🔍 Searching chat content for: '$search_term'${NC}"
-    echo "=============================================="
-    
-    found=false
-    for project_dir in "$CLAUDE_DIR"/*; do
-        if [[ -d "$project_dir" ]]; then
-            project_name=$(basename "$project_dir")
-            
-            for jsonl_file in "$project_dir"/*.jsonl; do
-                if [[ -f "$jsonl_file" ]]; then
-                    chat_name=$(basename "$jsonl_file" .jsonl)
-                    
-                    # Search in the jsonl file
-                    if grep -q -i "$search_term" "$jsonl_file" 2>/dev/null; then
-                        echo -e "${GREEN}📝 Found in: $project_name/${chat_name}${NC}"
-                        
-                        # Show matching lines with context
-                        if [[ "$PARSER" = "python" ]]; then
-                            python3 -c "
-import json
-import sys
-
-search_term = '$search_term'.lower()
-with open('$jsonl_file', 'r') as f:
-    for i, line in enumerate(f, 1):
-        try:
-            data = json.loads(line)
-            content = data.get('content', '')
-            if search_term in content.lower():
-                role = data.get('role', 'unknown')
-                preview = content[:100] + '...' if len(content) > 100 else content
-                print(f'   Line {i} ({role}): {preview}')
-        except:
-            pass
-"
-                        else
-                            # Fallback with jq
-                            grep -i -n "$search_term" "$jsonl_file" | head -3 | while read line; do
-                                echo "   $line"
-                            done
-                        fi
-                        echo ""
-                        found=true
-                    fi
-                fi
-            done
-        fi
-    done
-    
-    if [[ "$found" = false ]]; then
-        echo -e "${YELLOW}No content found matching '$search_term'${NC}"
-    fi
-}
-
-show_recent_projects() {
-    local count=${1:-10}
-    echo -e "${BLUE}⏰ $count Most Recently Modified Projects${NC}"
-    echo "========================================"
-    
-    # Create temporary file with project info
-    temp_file=$(mktemp)
-    
-    for project_dir in "$CLAUDE_DIR"/*; do
-        if [[ -d "$project_dir" ]]; then
-            info=$(get_project_info "$project_dir")
-            IFS='|' read -r name files messages modified path <<< "$info"
-            # Get timestamp for sorting
-            if [[ -n "$modified" && "$modified" != "unknown" ]]; then
-                timestamp=$(find "$project_dir" -name "*.jsonl" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -n | tail -1)
-                echo "$timestamp|$name|$files|$messages|$modified" >> "$temp_file"
-            fi
-        fi
-    done
-    
-    # Sort by timestamp and show top N
-    sort -nr "$temp_file" | head -n "$count" | while IFS='|' read -r timestamp name files messages modified; do
-        echo -e "${GREEN}📝 $name${NC} ($files chats, $messages messages, $modified)"
-    done
-    
-    rm -f "$temp_file"
-}
-
-parse_jsonl_python() {
-    local file="$1"
-    local format="$2"
-    local output_file="$3"
-    
-    python3 -c "
-import json
-import sys
-from datetime import datetime
-
-def format_timestamp(ts):
-    try:
-        if ts is None:
-            return 'No timestamp'
-        if isinstance(ts, str):
-            # Try parsing ISO format
-            try:
-                dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
-                return dt.strftime('%Y-%m-%d %H:%M:%S')
-            except:
-                return ts
-        if isinstance(ts, (int, float)):
-            # Handle both seconds and milliseconds timestamps
-            if ts > 1000000000000:  # Milliseconds
-                return datetime.fromtimestamp(ts / 1000).strftime('%Y-%m-%d %H:%M:%S')
-            else:  # Seconds
-                return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-        return str(ts)
-    except:
-        return 'Invalid timestamp'
-
-def format_content(content, role):
-    if content is None:
-        return f'[Empty {role} message]'
-    
-    if not content:
-        return f'[No content in {role} message]'
-    
-    # Handle string content
-    if isinstance(content, str):
-        return content.strip() if content.strip() else f'[Empty {role} message]'
-    
-    # Handle list content (Claude's structured format)
-    if isinstance(content, list):
-        text_parts = []
-        for item in content:
-            if isinstance(item, dict):
-                if item.get('type') == 'text':
-                    text = item.get('text', '').strip()
-                    if text:
-                        text_parts.append(text)
-                elif item.get('type') == 'tool_use':
-                    tool_name = item.get('name', 'unknown')
-                    tool_input = item.get('input', {})
-                    text_parts.append(f'🔧 [Tool Use: {tool_name}]')
-                    if tool_input:
-                        # Show first few parameters
-                        params = ', '.join(f'{k}={str(v)[:50]}...' if len(str(v)) > 50 else f'{k}={v}' 
-                                         for k, v in list(tool_input.items())[:3])
-                        text_parts.append(f'   Parameters: {params}')
-                elif item.get('type') == 'tool_result':
-                    result = item.get('content', '')
-                    if isinstance(result, str):
-                        preview = result[:200] + '...' if len(result) > 200 else result
-                        text_parts.append(f'⚙️ [Tool Result: {preview}]')
-                    else:
-                        text_parts.append('⚙️ [Tool Result]')
-                elif item.get('type') == 'image':
-                    text_parts.append('🖼️ [Image attachment]')
-            elif isinstance(item, str):
-                if item.strip():
-                    text_parts.append(item.strip())
-            else:
-                text_parts.append(str(item))
-        
-        result = '\n'.join(text_parts) if text_parts else f'[Empty {role} message]'
-        return result
-    
-    # Handle dict content
-    if isinstance(content, dict):
-        if 'text' in content:
-            return content['text'].strip() if content['text'] else f'[Empty {role} message]'
-        elif 'content' in content:
-            return format_content(content['content'], role)
-        else:
-            return f'[Complex {role} data: {str(content)[:100]}...]'
-    
-    return str(content) if content else f'[Empty {role} message]'
-
-format_type = '$format'
-output_file = '$output_file'
-
-messages = []
-with open('$file', 'r', encoding='utf-8') as f:
-    for line_num, line in enumerate(f, 1):
-        try:
-            data = json.loads(line.strip())
-            if data:  # Only process non-empty data
-                messages.append(data)
-        except json.JSONDecodeError as e:
-            print(f'Warning: Skipping invalid JSON on line {line_num}', file=sys.stderr)
-        except Exception as e:
-            print(f'Warning: Error processing line {line_num}: {e}', file=sys.stderr)
-
-if not messages:
-    print('No valid messages found')
-    sys.exit(1)
-
-output_lines = []
-
-if format_type == 'markdown':
-    output_lines.append('# Claude Chat Export\\n')
-    output_lines.append(f'Generated: {datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}\\n')
-    output_lines.append(f'Total messages: {len(messages)}\\n\\n')
-    
-    for i, msg in enumerate(messages, 1):
-        role = msg.get('role', 'unknown').title()
-        content = format_content(msg.get('content'), role)
-        timestamp = format_timestamp(msg.get('created_at', ''))
-        
-        output_lines.append(f'## Message {i} - {role}\\n')
-        output_lines.append(f'**Time:** {timestamp}\\n\\n')
-        output_lines.append(f'{content}\\n\\n')
-        output_lines.append('---\\n\\n')
-
-elif format_type == 'raw':
-    for msg in messages:
-        output_lines.append(json.dumps(msg, indent=2))
-
-else:  # pretty format
-    for i, msg in enumerate(messages, 1):
-        role = msg.get('role', 'unknown')
-        content = format_content(msg.get('content'), role)
-        timestamp = format_timestamp(msg.get('created_at', ''))
-        
-        if role == 'user':
-            color = '\033[0;32m'  # Green
-        elif role == 'assistant':
-            color = '\033[0;34m'  # Blue
-        else:
-            color = '\033[0;33m'  # Yellow
-        
-        reset = '\033[0m'
-        
-        output_lines.append(f'{color}📧 Message {i} - {role.title()}{reset}')
-        output_lines.append(f'🕒 {timestamp}')
-        output_lines.append(f'💬 {content}')
-        output_lines.append('─' * 80)
-
-result = '\\n'.join(output_lines)
-
-if output_file and output_file != '-':
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(result)
-    print(f'Chat exported to: {output_file}')
-else:
-    print(result)
-"
-}
-
-parse_jsonl_jq() {
-    local file="$1"
-    local format="$2"
-    local output_file="$3"
-    
-    if [[ "$format" = "raw" ]]; then
-        if [[ -n "$output_file" && "$output_file" != "-" ]]; then
-            jq '.' "$file" > "$output_file"
-            echo "Raw JSON exported to: $output_file"
-        else
-            jq '.' "$file"
-        fi
-    else
-        # Simple text extraction with jq
-        local output=""
-        local count=1
-        
-        while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-                role=$(echo "$line" | jq -r '.role // "unknown"')
-                content=$(echo "$line" | jq -r '.content // "No content"')
-                timestamp=$(echo "$line" | jq -r '.created_at // "Unknown time"')
-                
-                if [[ "$format" = "markdown" ]]; then
-                    output+="\n## Message $count - ${role^}\n"
-                    output+="**Time:** $timestamp\n\n"
-                    output+="$content\n\n"
-                    output+="---\n\n"
-                else
-                    output+="\n📧 Message $count - ${role^}\n"
-                    output+="🕒 $timestamp\n"
-                    output+="💬 $content\n"
-                    output+="$(printf '─%.0s' {1..80})\n"
-                fi
-                ((count++))
-            fi
-        done < "$file"
-        
-        if [[ -n "$output_file" && "$output_file" != "-" ]]; then
-            echo -e "$output" > "$output_file"
-            echo "Chat exported to: $output_file"
-        else
-            echo -e "$output"
-        fi
-    fi
-}
-
-view_chat() {
-    local file="$1"
-    local format="${2:-pretty}"
-    local output_file="$3"
-    local filename=$(basename "$file")
-    
-    if [[ ! -f "$file" ]]; then
-        echo -e "${RED}❌ File not found: $file${NC}"
-        return 1
-    fi
-    
-    echo -e "${BLUE}💬 Viewing: $filename${NC}"
-    echo "================================"
-    echo ""
-    
-    if [[ "$PARSER" = "python" ]]; then
-        parse_jsonl_python "$file" "$format" "$output_file"
-    else
-        parse_jsonl_jq "$file" "$format" "$output_file"
-    fi
-}
-
-browse_project() {
-    local project_dir="$1"
-    local format="${2:-pretty}"
-    local output_file="$3"
-    local project_name=$(basename "$project_dir")
-    
-    # Get all jsonl files in the project
-    local chat_files=($(find "$project_dir" -name "*.jsonl" -type f 2>/dev/null | sort))
-    
-    if [[ ${#chat_files[@]} -eq 0 ]]; then
-        echo -e "${YELLOW}No JSONL chat files found in project: $project_name${NC}"
-        return
-    fi
-    
-    echo -e "${BLUE}💬 Project: $project_name${NC}"
-    echo "================================"
-    echo -e "${CYAN}Found ${#chat_files[@]} chat file(s):${NC}"
-    echo ""
-    
-    # Show files with numbers and message counts
-    for i in "${!chat_files[@]}"; do
-        local file="${chat_files[$i]}"
-        local filename=$(basename "$file" .jsonl)
-        local size=$(du -h "$file" 2>/dev/null | cut -f1)
-        local modified=$(stat -c %y "$file" 2>/dev/null | cut -d' ' -f1 || stat -f %Sm -t %Y-%m-%d "$file" 2>/dev/null || echo "unknown")
-        local msg_count=$(wc -l < "$file" 2>/dev/null || echo "0")
-        printf "%2d) %-30s %8s %10s msgs %s\n" $((i+1)) "$filename" "$size" "$msg_count" "$modified"
-    done
-    
-    echo ""
-    echo -e "${YELLOW}Choose an option:${NC}"
-    echo "  1-${#chat_files[@]}) View specific chat"
-    echo "  a) View all chats"
-    echo "  e) Export all to markdown"
-    echo "  q) Quit"
-    echo ""
-    
-    while true; do
-        read -p "Enter choice: " choice
-        
-        case "$choice" in
-            [1-9]*)
-                if [[ "$choice" -ge 1 && "$choice" -le ${#chat_files[@]} ]]; then
-                    view_chat "${chat_files[$((choice-1))]}" "$format" "$output_file"
-                    echo ""
-                    read -p "Press Enter to continue..."
-                    break
-                else
-                    echo -e "${RED}Invalid selection. Please choose 1-${#chat_files[@]}${NC}"
-                fi
-                ;;
-            "a"|"A")
-                for file in "${chat_files[@]}"; do
-                    echo ""
-                    echo -e "${CYAN}" + "="*60 + "${NC}"
-                    view_chat "$file" "$format"
-                    echo ""
-                    read -p "Press Enter for next chat (or 'q' to stop)..." next
-                    if [[ "$next" == "q" ]]; then
-                        break
-                    fi
-                done
-                break
-                ;;
-            "e"|"E")
-                local export_dir="${project_name}_export_$(date +%Y%m%d_%H%M%S)"
-                mkdir -p "$export_dir"
-                echo -e "${BLUE}📤 Exporting all chats to markdown in: $export_dir${NC}"
-                
-                for file in "${chat_files[@]}"; do
-                    local chat_name=$(basename "$file" .jsonl)
-                    local export_file="$export_dir/${chat_name}.md"
-                    view_chat "$file" "markdown" "$export_file" > /dev/null
-                done
-                
-                echo -e "${GREEN}✅ All chats exported to: $export_dir/${NC}"
-                ls -la "$export_dir"
-                break
-                ;;
-            "q"|"Q")
-                break
-                ;;
-            *)
-                echo -e "${RED}Invalid choice. Please enter a number, 'a', 'e', or 'q'${NC}"
-                ;;
-        esac
-    done
-}
-
-interactive_browser() {
-    echo -e "${BLUE}🤖 Claude JSONL Chat Browser${NC}"
-    echo "============================="
-    echo ""
-    
-    # Get projects sorted by modification time
-    projects=()
-    while IFS= read -r -d '' project_dir; do
-        if [[ -d "$project_dir" ]]; then
-            projects+=("$project_dir")
-        fi
-    done < <(find "$CLAUDE_DIR" -maxdepth 1 -type d ! -path "$CLAUDE_DIR" -print0 2>/dev/null | sort -z)
-    
-    if [[ ${#projects[@]} -eq 0 ]]; then
-        echo -e "${YELLOW}No projects found in $CLAUDE_DIR${NC}"
-        return
-    fi
-    
-    echo -e "${CYAN}Available projects:${NC}"
-    echo ""
-    
-    for i in "${!projects[@]}"; do
-        local project_dir="${projects[$i]}"
-        local info=$(get_project_info "$project_dir")
-        IFS='|' read -r name files messages modified path <<< "$info"
-        printf "%2d) %-25s (%s chats, %s msgs, %s)\n" $((i+1)) "$name" "$files" "$messages" "$modified"
-    done
-    
-    echo ""
-    echo -e "${YELLOW}Options:${NC}"
-    echo "  1-${#projects[@]}) Browse specific project"
-    echo "  l) List all projects with details"
-    echo "  r) Show recent projects"
-    echo "  c) Search chat content"
-    echo "  q) Quit"
-    echo ""
-    
-    while true; do
-        read -p "Enter choice: " choice
-        
-        case "$choice" in
-            [1-9]*)
-                if [[ "$choice" -ge 1 && "$choice" -le ${#projects[@]} ]]; then
-                    browse_project "${projects[$((choice-1))]}"
-                    break
-                else
-                    echo -e "${RED}Invalid selection. Please choose 1-${#projects[@]}${NC}"
-                fi
-                ;;
-            "l"|"L")
-                list_projects
-                echo ""
-                read -p "Press Enter to continue..."
-                ;;
-            "r"|"R")
-                show_recent_projects 10
-                echo ""
-                read -p "Press Enter to continue..."
-                ;;
-            "c"|"C")
-                read -p "Enter search term: " search_term
-                if [[ -n "$search_term" ]]; then
-                    search_content "$search_term"
-                fi
-                echo ""
-                read -p "Press Enter to continue..."
-                ;;
-            "q"|"Q")
-                echo -e "${BLUE}👋 Goodbye!${NC}"
-                break
-                ;;
-            *)
-                echo -e "${RED}Invalid choice. Please enter a number, 'l', 'r', 'c', or 'q'${NC}"
-                ;;
-        esac
-    done
-}
-
-# Main script logic
-main() {
-    check_dependencies
-    check_claude_dir
-    
-    local format="pretty"
-    local output_file=""
-    
-    # Parse command line arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -l|--list)
-                list_projects
-                exit 0
-                ;;
-            -s|--search)
-                if [[ -n "$2" ]]; then
-                    search_projects "$2"
-                    shift 2
-                else
-                    echo -e "${RED}Error: --search requires a search term${NC}"
-                    exit 1
-                fi
-                exit 0
-                ;;
-            -c|--content)
-                if [[ -n "$2" ]]; then
-                    search_content "$2"
-                    shift 2
-                else
-                    echo -e "${RED}Error: --content requires a search term${NC}"
-                    exit 1
-                fi
-                exit 0
-                ;;
-            -r|--recent)
-                count=${2:-10}
-                if [[ "$count" =~ ^[0-9]+$ ]]; then
-                    show_recent_projects "$count"
-                    shift 2
-                else
-                    show_recent_projects 10
-                    shift
-                fi
-                exit 0
-                ;;
-            -f|--format)
-                if [[ -n "$2" ]]; then
-                    format="$2"
-                    shift 2
-                else
-                    echo -e "${RED}Error: --format requires a format type${NC}"
-                    exit 1
-                fi
-                ;;
-            -o|--output)
-                if [[ -n "$2" ]]; then
-                    output_file="$2"
-                    shift 2
-                else
-                    echo -e "${RED}Error: --output requires a filename${NC}"
-                    exit 1
-                fi
-                ;;
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            -*)
-                echo -e "${RED}Unknown option: $1${NC}"
-                show_help
-                exit 1
-                ;;
-            *)
-                # Assume it's a project name
-                project_path="$CLAUDE_DIR/$1"
-                if [[ -d "$project_path" ]]; then
-                    browse_project "$project_path" "$format" "$output_file"
-                else
-                    echo -e "${RED}Project not found: $1${NC}"
-                    echo "Available projects:"
-                    list_projects
-                fi
-                exit 0
-                ;;
-        esac
-    done
-    
-    # If no arguments, start interactive browser
-    interactive_browser
-}
-
-main "$@"
