@@ -261,32 +261,82 @@ from datetime import datetime
 
 def format_timestamp(ts):
     try:
+        if ts is None:
+            return 'No timestamp'
+        if isinstance(ts, str):
+            # Try parsing ISO format
+            try:
+                dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                return dt.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                return ts
         if isinstance(ts, (int, float)):
-            return datetime.fromtimestamp(ts / 1000 if ts > 1000000000000 else ts).strftime('%Y-%m-%d %H:%M:%S')
+            # Handle both seconds and milliseconds timestamps
+            if ts > 1000000000000:  # Milliseconds
+                return datetime.fromtimestamp(ts / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            else:  # Seconds
+                return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
         return str(ts)
     except:
-        return 'Unknown time'
+        return 'Invalid timestamp'
 
 def format_content(content, role):
-    if not content:
-        return 'No content'
+    if content is None:
+        return f'[Empty {role} message]'
     
-    # Handle different content types
+    if not content:
+        return f'[No content in {role} message]'
+    
+    # Handle string content
+    if isinstance(content, str):
+        return content.strip() if content.strip() else f'[Empty {role} message]'
+    
+    # Handle list content (Claude's structured format)
     if isinstance(content, list):
         text_parts = []
         for item in content:
             if isinstance(item, dict):
                 if item.get('type') == 'text':
-                    text_parts.append(item.get('text', ''))
+                    text = item.get('text', '').strip()
+                    if text:
+                        text_parts.append(text)
                 elif item.get('type') == 'tool_use':
-                    text_parts.append(f'[Tool: {item.get(\"name\", \"unknown\")}]')
+                    tool_name = item.get('name', 'unknown')
+                    tool_input = item.get('input', {})
+                    text_parts.append(f'🔧 [Tool Use: {tool_name}]')
+                    if tool_input:
+                        # Show first few parameters
+                        params = ', '.join(f'{k}={str(v)[:50]}...' if len(str(v)) > 50 else f'{k}={v}' 
+                                         for k, v in list(tool_input.items())[:3])
+                        text_parts.append(f'   Parameters: {params}')
                 elif item.get('type') == 'tool_result':
-                    text_parts.append('[Tool Result]')
+                    result = item.get('content', '')
+                    if isinstance(result, str):
+                        preview = result[:200] + '...' if len(result) > 200 else result
+                        text_parts.append(f'⚙️ [Tool Result: {preview}]')
+                    else:
+                        text_parts.append('⚙️ [Tool Result]')
+                elif item.get('type') == 'image':
+                    text_parts.append('🖼️ [Image attachment]')
+            elif isinstance(item, str):
+                if item.strip():
+                    text_parts.append(item.strip())
             else:
                 text_parts.append(str(item))
-        return ' '.join(text_parts)
+        
+        result = '\n'.join(text_parts) if text_parts else f'[Empty {role} message]'
+        return result
     
-    return str(content)
+    # Handle dict content
+    if isinstance(content, dict):
+        if 'text' in content:
+            return content['text'].strip() if content['text'] else f'[Empty {role} message]'
+        elif 'content' in content:
+            return format_content(content['content'], role)
+        else:
+            return f'[Complex {role} data: {str(content)[:100]}...]'
+    
+    return str(content) if content else f'[Empty {role} message]'
 
 format_type = '$format'
 output_file = '$output_file'
@@ -296,9 +346,12 @@ with open('$file', 'r', encoding='utf-8') as f:
     for line_num, line in enumerate(f, 1):
         try:
             data = json.loads(line.strip())
-            messages.append(data)
+            if data:  # Only process non-empty data
+                messages.append(data)
         except json.JSONDecodeError as e:
-            print(f'Error parsing line {line_num}: {e}', file=sys.stderr)
+            print(f'Warning: Skipping invalid JSON on line {line_num}', file=sys.stderr)
+        except Exception as e:
+            print(f'Warning: Error processing line {line_num}: {e}', file=sys.stderr)
 
 if not messages:
     print('No valid messages found')
