@@ -468,10 +468,9 @@ def parse_jsonl_file(file_path, format_type='pretty', output_file=None):
 
     output_lines = []
 
-    if format_type == 'markdown':
+    if format_type in ['markdown', 'book']:
         output_lines.append('# Claude Chat Export\n')
-        output_lines.append(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
-        output_lines.append(f'Total messages: {len(chat_messages)}\n\n')
+        output_lines.append(f'**Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}**\n')
 
     msg_count = 0
     for i, entry in enumerate(chat_messages, 1):
@@ -503,7 +502,17 @@ def parse_jsonl_file(file_path, format_type='pretty', output_file=None):
         if not formatted_content or formatted_content.strip() in ['[Empty unknown message]', '[No content in unknown message]']:
             continue
         
-        if format_type == 'markdown':
+        if format_type == 'book':
+            # Book format - clean, minimal presentation
+            if role == 'user':
+                # User question in callout style
+                output_lines.append(f'> {formatted_content}\n\n')
+            elif role == 'assistant':
+                # Assistant response without headers
+                output_lines.append(f'{formatted_content}\n\n')
+            
+        elif format_type == 'markdown':
+            # Original markdown format
             output_lines.append(f'## Message {msg_count} - {role.title()}\n')
             output_lines.append(f'**Time:** {timestamp}\n\n')
             output_lines.append(f'{formatted_content}\n\n')
@@ -665,6 +674,7 @@ def browse_project(project_path, format_type='pretty', output_file=None):
     print(f"  1-{len(chat_files)}) View specific chat")
     print("  a) View all chats")
     print("  e) Export all to markdown")
+    print("  eb) Export all to book format") 
     print("  b) Back to main menu")
     print("  q) Quit")
     print()
@@ -706,6 +716,24 @@ def browse_project(project_path, format_type='pretty', output_file=None):
                     size = os.path.getsize(file_path)
                     print(f"   {file} ({size/1024:.1f}KB)")
                 break
+            elif choice.lower() == 'eb':
+                # Export all to book format
+                export_dir = f"{project_name}_book_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                os.makedirs(export_dir, exist_ok=True)
+                print_colored(f"📚 Exporting all chats to book format in: {export_dir}", Colors.BLUE)
+                
+                for file_path in chat_files:
+                    chat_name = file_path.stem
+                    export_file = os.path.join(export_dir, f"{chat_name}.md")
+                    parse_jsonl_file(file_path, 'book', export_file)
+                
+                print_colored(f"✅ All chats exported to book format: {export_dir}/", Colors.GREEN)
+                # List exported files
+                for file in os.listdir(export_dir):
+                    file_path = os.path.join(export_dir, file)
+                    size = os.path.getsize(file_path)
+                    print(f"   {file} ({size/1024:.1f}KB)")
+                break
             elif choice.isdigit():
                 choice_num = int(choice)
                 if 1 <= choice_num <= len(chat_files):
@@ -741,6 +769,7 @@ def browse_project(project_path, format_type='pretty', output_file=None):
                     print(f"  1-{len(chat_files)}) View specific chat")
                     print("  a) View all chats")
                     print("  e) Export all to markdown")
+                    print("  eb) Export all to book format")
                     print("  b) Back to main menu")
                     print("  q) Quit")
                     print()
@@ -750,7 +779,7 @@ def browse_project(project_path, format_type='pretty', output_file=None):
                 else:
                     print_colored(f"Invalid selection. Please choose 1-{len(chat_files)}", Colors.RED)
             else:
-                print_colored("Invalid choice. Please enter a number, 'a', 'e', 'b', or 'q'", Colors.RED)
+                print_colored("Invalid choice. Please enter a number, 'a', 'e', 'eb', 'b', or 'q'", Colors.RED)
         
         except KeyboardInterrupt:
             print()
@@ -876,6 +905,7 @@ Examples:
   %(prog)s -r 5                      # Show 5 most recent projects
   %(prog)s -s docker                 # Search for projects with 'docker' in name
   %(prog)s "my-project"              # View specific project chats
+  %(prog)s "my-project" -f book      # View as clean book format
   %(prog)s "my-project" -f markdown  # View as markdown
   %(prog)s "my-project" -o chat.md   # Save to markdown file
   %(prog)s -c "update checker"       # Search chat content
@@ -887,8 +917,8 @@ Examples:
     parser.add_argument('-s', '--search', metavar='TERM', help='Search for projects containing TERM')
     parser.add_argument('-r', '--recent', metavar='N', type=int, nargs='?', const=10,
                        help='Show N most recently modified projects (default: 10)')
-    parser.add_argument('-f', '--format', choices=['pretty', 'markdown', 'raw'], 
-                       default='pretty', help='Output format (default: pretty)')
+    parser.add_argument('-f', '--format', choices=['pretty', 'markdown', 'raw', 'book'], 
+                       default='pretty', help='Output format (default: pretty, book=clean markdown without timestamps)')
     parser.add_argument('-o', '--output', metavar='FILE', help='Save output to file')
     parser.add_argument('-c', '--content', metavar='TERM', help='Search for content within chats')
     
