@@ -7,7 +7,7 @@ A powerful Python tool to browse, read, and export Claude Desktop's JSONL chat f
 - 📋 **Interactive Project Browser** - Navigate through all your Claude projects
 - 🔍 **Smart Search** - Search project names and chat content across all conversations
 - 📖 **Paged Chat Viewing** - Unix `less`-like navigation for comfortable reading
-- 📊 **Multiple Export Formats** - Pretty terminal output, Markdown, or raw JSON
+- 📊 **Multiple Export Formats** - Pretty terminal output, Markdown, clean Book format, or raw JSON
 - 🎯 **Batch Export** - Export entire projects to organized Markdown files
 - 🎨 **Colored Output** - Beautiful terminal interface with syntax highlighting
 - ⚡ **Fast Performance** - Efficient parsing of large chat histories
@@ -49,7 +49,7 @@ alias claude='python3 /path/to/claude-reader.py'
 
 # Usage
 claude --list
-claude "My Project" -f markdown
+claude "My Project" -f book
 ```
 
 ## 📖 Usage
@@ -115,12 +115,16 @@ python3 claude-reader.py "Home Mike Src Pollen Web Application"
 
 #### Export Options
 ```bash
+# Export to clean book format (NEW!)
+python3 claude-reader.py "My Project" --format book --output clean_chat.md
+
 # Export to markdown file
 python3 claude-reader.py "My Project" --format markdown --output chat.md
 
 # Export in different formats
 python3 claude-reader.py "My Project" -f pretty    # Terminal output (default)
-python3 claude-reader.py "My Project" -f markdown  # Clean markdown
+python3 claude-reader.py "My Project" -f book      # Clean book format
+python3 claude-reader.py "My Project" -f markdown  # Standard markdown
 python3 claude-reader.py "My Project" -f raw       # Raw JSON
 ```
 
@@ -149,6 +153,7 @@ python3 claude-reader.py "My Project" -f raw       # Raw JSON
 - **1-9**: View specific chat
 - **a**: View all chats sequentially
 - **e**: Export all chats to markdown
+- **eb**: Export all chats to book format (NEW!)
 - **b**: Back to main menu
 - **q**: Quit
 
@@ -170,12 +175,31 @@ python3 claude-reader.py "My Project" -f raw       # Raw JSON
 📄 [File Read]: /home/mike/src/pollen-web-application/script.js (1034 lines)
 ```
 
-### Markdown Format
+### Book Format (NEW! - Clean & Readable)
 ```markdown
 # Claude Chat Export
 
-Generated: 2025-09-21 10:30:00
-Total messages: 25
+**Generated: 2025-09-21 12:25:52**
+
+> should i include package-lock file in .gitignore
+
+I'll check your current .gitignore file to see what's already included and provide guidance on package-lock.json.
+
+🔧 [Tool Use: Read]
+   File: /home/mike/src/pollen-local-api/.gitignore
+
+For Node.js projects, the decision about package-lock.json in .gitignore depends on your project type...
+
+> what about yarn.lock?
+
+For yarn.lock, the recommendation is different from package-lock.json...
+```
+
+### Markdown Format (Standard)
+```markdown
+# Claude Chat Export
+
+**Generated: 2025-09-21 10:30:00**
 
 ## Message 1 - User
 **Time:** 2025-09-20 12:28:46
@@ -203,10 +227,15 @@ The reader intelligently formats Claude's tool usage:
 Projects starting with `-` (like `-home-mike-src-project`) are automatically cleaned to readable format (`Home Mike Src Project`).
 
 ### Batch Export
-Export entire projects to organized markdown files:
+Export entire projects to organized files:
 ```bash
-# In interactive mode, select project then choose 'e'
-# Creates: ProjectName_export_20250921_103000/
+# In interactive mode, select project then choose:
+# 'e' for standard markdown export
+# 'eb' for clean book format export
+
+# Creates directories like:
+# ProjectName_export_20250921_103000/
+# ProjectName_book_export_20250921_103000/
 #   ├── chat-session-1.md
 #   ├── mobile-fixes.md
 #   └── api-optimization.md
@@ -225,22 +254,19 @@ Claude Desktop stores projects in:
 
 Each project contains `.jsonl` files representing individual chats.
 
-## 🛠️ Technical Details
+## 🛠️ What's New
 
-### Supported Formats
-- **JSONL**: Claude Desktop's native chat format
-- **Tool Results**: File operations, code edits, todo management
-- **Complex Content**: Handles both simple text and structured tool interactions
+### Book Format Features
+- **Clean presentation**: Removes timestamps and message numbers for distraction-free reading
+- **Simple user questions**: Questions appear as simple blockquotes (`> question text`)
+- **Direct responses**: Assistant answers without headers or metadata
+- **Perfect for sharing**: Creates clean, readable documents ideal for documentation or reference
+- **Batch export**: Use `eb` command in project browser for bulk book format export
 
-### Performance
-- **Efficient Parsing**: Processes large chat files quickly
-- **Memory Optimized**: Streams content for large conversations
-- **Terminal Adaptive**: Automatically adjusts to screen size
-
-### Compatibility
-- **Python 3.6+**: Works on all modern Python installations
-- **Cross-Platform**: Linux, macOS, Windows support
-- **Terminal Flexible**: Adapts to different terminal capabilities
+### Enhanced Header
+- Bold formatting for generation timestamp
+- Cleaner visual presentation
+- Consistent across all export formats
 
 ## 🔍 Troubleshooting
 
@@ -282,16 +308,16 @@ claude-reader -r 5
 # Search for specific topics
 claude-reader -c "docker deployment"
 
-# Browse and export a project
+# Browse and export a project in clean book format
 claude-reader "My Important Project"
-# Then in interactive mode: 'e' to export all
+# Then in interactive mode: 'eb' to export in book format
 ```
 
 ### Documentation Generation
 ```bash
-# Export all projects for documentation
+# Export all projects in clean book format for documentation
 for project in "Docker Setup" "API Development" "System Scripts"; do
-    claude-reader "$project" -f markdown -o "${project// /-}.md"
+    claude-reader "$project" -f book -o "${project// /-}-book.md"
 done
 ```
 
@@ -302,6 +328,15 @@ claude-reader -c "authentication"
 claude-reader -c "database migration"
 claude-reader -c "error handling"
 ```
+
+## 🆕 Book Format Use Cases
+
+The new book format is perfect for:
+- **📚 Documentation**: Create clean reference materials from conversations
+- **📤 Sharing**: Export conversations in a professional, readable format
+- **📝 Tutorials**: Convert technical discussions into tutorial-style documents
+- **🎯 Focus**: Read conversations without timestamp and metadata distractions
+- **📖 Archiving**: Store important conversations in a clean, timeless format
 
 ## 🤝 Contributing
 
@@ -326,3 +361,5 @@ This tool is provided as-is for personal use with Claude Desktop chat histories.
 ---
 
 **Made with ❤️ for the Claude community**
+
+*Featuring the new Book format for clean, distraction-free reading and sharing!*
